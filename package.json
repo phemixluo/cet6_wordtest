@@ -1,0 +1,19 @@
+{
+  "name": "cet6-wordlab",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "extract": "python scripts/extract-wordbook.py",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue": "latest",
+    "lucide-vue-next": "latest",
+    "vite": "latest",
+    "vue": "latest"
+  },
+  "devDependencies": {}
+}
