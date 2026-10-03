@@ -12,10 +12,12 @@ import {
   Flame,
   LayoutDashboard,
   ListChecks,
+  Moon,
   Play,
   RotateCcw,
   Settings2,
   Sparkles,
+  Sun,
   Target,
   Trash2,
   Upload,
@@ -24,6 +26,7 @@ import {
 import wordBank from './data/wordBank.json'
 
 const STORAGE_KEY = 'cet6-wordlab-wrong-answers-v1'
+const THEME_KEY = 'cet6-wordlab-theme-v1'
 
 const navItems = [
   { id: 'practice', label: '练习工作台', icon: LayoutDashboard },
@@ -39,7 +42,10 @@ const typedAnswer = ref('')
 const wrongRecords = ref(loadWrongRecords())
 const toast = ref('')
 const fileInput = ref(null)
+const theme = ref(loadTheme())
 let toastTimer
+
+if (typeof document !== 'undefined') document.documentElement.dataset.theme = theme.value
 
 const lists = computed(() => {
   return Array.from({ length: 20 }, (_, index) => {
@@ -89,6 +95,19 @@ watch(questionCount, (value) => {
 watch(wrongRecords, (value) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
 }, { deep: true })
+
+watch(theme, (value) => {
+  document.documentElement.dataset.theme = value
+  localStorage.setItem(THEME_KEY, value)
+})
+
+function loadTheme() {
+  return localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'
+}
+
+function toggleTheme() {
+  theme.value = theme.value === 'dark' ? 'light' : 'dark'
+}
 
 function loadWrongRecords() {
   try {
@@ -304,6 +323,7 @@ function formatDate(value) {
         <div class="breadcrumb"><span>六级词汇</span><ChevronRight :size="14" /><strong>{{ activeView === 'practice' ? '练习工作台' : '错题档案' }}</strong></div>
         <div class="topbar-actions">
           <button class="icon-button" title="重新开始当前练习" aria-label="重新开始当前练习" @click="startSession"><RotateCcw :size="17" /></button>
+          <button class="icon-button theme-toggle" :title="theme === 'dark' ? '切换到亮色主题' : '切换到暗色主题'" :aria-label="theme === 'dark' ? '切换到亮色主题' : '切换到暗色主题'" @click="toggleTheme"><Sun v-if="theme === 'dark'" :size="17" /><Moon v-else :size="17" /></button>
           <div class="profile-chip"><span class="profile-avatar">W</span><span class="profile-name">Word learner</span></div>
         </div>
       </header>
