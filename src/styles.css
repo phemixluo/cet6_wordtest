@@ -144,7 +144,9 @@ h1 { max-width: 720px; margin-top: 15px; font-family: 'Source Han Serif SC', Geo
 .progress-track span { display: block; height: 100%; background: var(--lime); transition: width .35s ease; }
 .prompt-block { padding: 45px 0 34px; text-align: center; }
 .prompt-label { color: #8e8a81; font-size: 11px; }
-.word-prompt { margin-top: 12px; font-family: 'Source Han Serif SC', Georgia, serif; font-size: clamp(42px, 6vw, 70px); line-height: 1; letter-spacing: 0; }
+.word-prompt { max-width: 100%; margin-top: 12px; padding: 0 10px; overflow-wrap: anywhere; font-family: 'Source Han Serif SC', Georgia, serif; font-size: clamp(42px, 6vw, 70px); line-height: 1.12; letter-spacing: 0; }
+.word-prompt-long { font-size: clamp(36px, 5vw, 58px); }
+.word-prompt-extra-long { font-size: clamp(30px, 4vw, 48px); }
 .word-syllable { display: inline-block; margin-top: 14px; color: var(--coral); font: 10px 'DM Mono', monospace; letter-spacing: 1.2px; }
 .meaning-prompt { max-width: 540px; margin: 17px auto 0; font-family: 'Source Han Serif SC', Georgia, serif; font-size: clamp(22px, 3vw, 32px); line-height: 1.4; letter-spacing: 0; }
 .hint-line { display: flex; align-items: center; justify-content: center; gap: 11px; margin-top: 20px; color: #8f8b82; font-size: 11px; }
@@ -171,7 +173,11 @@ h1 { max-width: 720px; margin-top: 15px; font-family: 'Source Han Serif SC', Geo
 .feedback-row strong, .feedback-row span { display: block; }
 .feedback-row strong { color: #f5f0e7; font-size: 12px; }
 .feedback-row span { margin-top: 3px; overflow: hidden; color: #9d998f; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.next-button { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 11px; border: 1px solid #4b483f; color: var(--lime); background: #24231f; font-size: 12px; font-weight: 700; white-space: nowrap; transition: color .2s ease, border-color .2s ease, background .2s ease, transform .2s ease; }
+.feedback-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.previous-button, .next-button { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 11px; border: 1px solid #4b483f; font-size: 12px; font-weight: 700; white-space: nowrap; transition: color .2s ease, border-color .2s ease, background .2s ease, transform .2s ease; }
+.previous-button { color: #b2aca1; background: transparent; }
+.previous-button:hover { color: #f5f0e7; border-color: #8c867b; transform: translateY(-1px); }
+.next-button { color: var(--lime); background: #24231f; }
 .next-button:hover { color: var(--deep-ink); border-color: var(--lime); background: var(--lime); transform: translateY(-1px); }
 
 .right-rail { display: grid; gap: 17px; }
@@ -196,6 +202,8 @@ h1 { max-width: 720px; margin-top: 15px; font-family: 'Source Han Serif SC', Geo
 .number-control input { width: 39px; padding: 0; border: 0; outline: 0; color: var(--ink); background: transparent; font: 12px 'DM Mono', monospace; text-align: center; }
 .number-control input::-webkit-inner-spin-button, .number-control input::-webkit-outer-spin-button { appearance: none; margin: 0; }
 .limit-note { margin-top: 10px; color: var(--muted); font: 10px 'DM Mono', monospace; }
+.list-legend { display: flex; align-items: center; gap: 6px; margin-top: 9px; color: var(--muted); font-size: 10px; }
+.list-legend i { width: 16px; height: 2px; display: inline-block; background: var(--coral); }
 .quote-panel { min-height: 147px; padding: 22px; color: #e9e3d8; background: var(--coral); }
 .quote-mark { height: 32px; color: var(--ink); font: 53px Georgia, serif; line-height: .8; }
 .quote-panel p { max-width: 270px; font-family: 'Source Han Serif SC', Georgia, serif; font-size: 16px; line-height: 1.55; }
@@ -294,12 +302,14 @@ tbody tr:hover { background: #f1ece2; }
   .question-area { min-height: 450px; padding-top: 26px; }
   .prompt-block { padding: 40px 0 28px; }
   .word-prompt { font-size: 47px; }
+  .word-prompt.word-prompt-long { font-size: 39px; }
+  .word-prompt.word-prompt-extra-long { font-size: 31px; }
   .meaning-prompt { font-size: 22px; }
   .answer-grid { grid-template-columns: 1fr; }
   .answer-option { min-height: 49px; }
   .feedback-row { align-items: flex-start; flex-wrap: wrap; }
   .feedback-row div:nth-child(2) { flex: 1 1 calc(100% - 45px); }
-  .next-button { margin-left: 35px; }
+  .feedback-actions { width: calc(100% - 35px); margin-left: 35px; justify-content: flex-end; }
   .right-rail { grid-template-columns: 1fr; }
   .list-panel { padding: 19px 14px 16px; }
   .list-grid { grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 18px; }

@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import {
   AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   BookOpen,
   Check,
@@ -51,7 +52,8 @@ const lists = computed(() => {
   return Array.from({ length: 20 }, (_, index) => {
     const number = index + 1
     const words = wordBank.filter((item) => item.list === number)
-    return { number, words, progress: words.filter((item) => wrongRecords.value[recordKey(item)]).length }
+    const wrongCount = words.filter((item) => wrongRecords.value[recordKey(item)]).length
+    return { number, words, progress: words.length ? Math.round((wrongCount / words.length) * 100) : 0 }
   })
 })
 
@@ -74,7 +76,14 @@ const hintPattern = computed(() => {
   return word.split('').map((letter, index) => {
     const visible = index === 0 || index === word.length - 1 || index % 3 === 0
     return visible ? letter : '_'
-  }).join(' ')
+}).join(' ')
+const wordPromptClass = computed(() => {
+  const length = currentWord.value?.word?.length || 0
+  return {
+    'word-prompt-long': length > 12,
+    'word-prompt-extra-long': length > 18,
+  }
+})
 })
 const accuracy = computed(() => {
   if (!session.value?.answered) return 0
@@ -142,6 +151,7 @@ function startSession() {
     score: 0,
     answered: 0,
     streak: 0,
+    answers: Array(count).fill(null),
     selectedAnswer: null,
     feedback: null,
     options: makeOptions(queue[0]),
@@ -154,14 +164,23 @@ function evaluate(isCorrect, answer) {
   if (!session.value || session.value.feedback) return
   session.value.selectedAnswer = answer
   session.value.feedback = isCorrect ? 'correct' : 'incorrect'
-  session.value.answered += 1
-  if (isCorrect) {
-    session.value.score += 1
-    session.value.streak += 1
-  } else {
-    session.value.streak = 0
+  session.value.answers[session.value.index] = { isCorrect, answer }
+  refreshSessionStats()
+  if (!isCorrect) {
     saveMistake(currentWord.value)
   }
+}
+
+function refreshSessionStats() {
+  const answers = session.value.answers.filter(Boolean)
+  session.value.answered = answers.length
+  session.value.score = answers.filter((answer) => answer.isCorrect).length
+  let streak = 0
+  for (let index = session.value.index; index >= 0; index -= 1) {
+    if (!session.value.answers[index] || !session.value.answers[index].isCorrect) break
+    streak += 1
+  }
+  session.value.streak = streak
 }
 
 function chooseAnswer(answer) {
@@ -183,6 +202,17 @@ function nextQuestion() {
   session.value.options = makeOptions(session.value.queue[session.value.index])
   session.value.selectedAnswer = null
   session.value.feedback = null
+  typedAnswer.value = ''
+}
+
+function previousQuestion() {
+  if (!session.value || session.value.index <= 0) return
+  session.value.index -= 1
+  session.value.answers[session.value.index] = null
+  session.value.options = makeOptions(session.value.queue[session.value.index])
+  session.value.selectedAnswer = null
+  session.value.feedback = null
+  refreshSessionStats()
   typedAnswer.value = ''
 }
 
@@ -375,7 +405,7 @@ function formatDate(value) {
               <div class="question-header"><div><span class="question-index">{{ String(session.index + 1).padStart(2, '0') }} <i>/</i> {{ String(session.queue.length).padStart(2, '0') }}</span><span class="question-list">LIST {{ selectedList }}</span></div><span class="streak"><Flame :size="14" /> {{ session.streak }} 连对</span></div>
               <div class="progress-track"><span :style="{ width: `${sessionPercent}%` }"></span></div>
 
-              <div v-if="mode === 'choice'" class="prompt-block"><span class="prompt-label">选择最贴切的中文释义</span><h3 class="word-prompt">{{ currentWord.word }}</h3><span class="word-syllable">WORD · {{ currentWord.word.length }} LETTERS</span></div>
+              <div v-if="mode === 'choice'" class="prompt-block"><span class="prompt-label">选择最贴切的中文释义</span><h3 class="word-prompt" :class="wordPromptClass">{{ currentWord.word }}</h3><span class="word-syllable">WORD · {{ currentWord.word.length }} LETTERS</span></div>
               <div v-else class="prompt-block"><span class="prompt-label">根据释义，拼出对应的单词</span><h3 class="meaning-prompt">{{ currentWord.meaning }}</h3><div class="hint-line"><span>字母提示</span><strong>{{ hintPattern }}</strong></div></div>
 
               <div v-if="mode === 'choice'" class="answer-grid">
@@ -383,16 +413,16 @@ function formatDate(value) {
               </div>
               <form v-else class="fill-form" @submit.prevent="submitFill"><input v-model="typedAnswer" :disabled="!!session.feedback" autofocus autocomplete="off" placeholder="输入单词" /><button class="small-action" type="submit" :disabled="!!session.feedback || !typedAnswer.trim()" aria-label="提交答案" title="提交答案"><ArrowRight :size="18" /></button></form>
 
-              <div v-if="session.feedback" class="feedback-row" :class="session.feedback"><div class="feedback-symbol"><Check v-if="session.feedback === 'correct'" :size="17" /><X v-else :size="17" /></div><div><strong>{{ session.feedback === 'correct' ? '答对了，继续保持。' : `答案是 ${currentWord.word}` }}</strong><span>{{ currentWord.meaning }}</span></div><button class="next-button" @click="nextQuestion">{{ session.index === session.queue.length - 1 ? '查看结果' : '下一题' }} <ArrowRight :size="15" /></button></div>
+              <div v-if="session.feedback" class="feedback-row" :class="session.feedback"><div class="feedback-symbol"><Check v-if="session.feedback === 'correct'" :size="17" /><X v-else :size="17" /></div><div><strong>{{ session.feedback === 'correct' ? '答对了，继续保持。' : `答案是 ${currentWord.word}` }}</strong><span>{{ currentWord.meaning }}</span></div><div class="feedback-actions"><button v-if="session.index > 0" class="previous-button" @click="previousQuestion"><ArrowLeft :size="15" /> 上一题</button><button class="next-button" @click="nextQuestion">{{ session.index === session.queue.length - 1 ? '查看结果' : '下一题' }} <ArrowRight :size="15" /></button></div></div>
             </div>
           </section>
 
           <aside class="right-rail">
             <section class="list-panel">
               <div class="panel-heading"><div><span class="section-kicker">WORD BANK</span><h2>选择一个 List</h2></div><span class="panel-count">20</span></div>
-              <div class="list-grid"><button v-for="list in lists" :key="list.number" class="list-tile" :class="{ active: selectedList === list.number }" @click="chooseList(list.number)"><span>List {{ String(list.number).padStart(2, '0') }}</span><small>{{ list.words.length }}</small><i :style="{ '--progress': `${Math.min(list.progress * 12, 100)}%` }"></i></button></div>
+              <div class="list-grid"><button v-for="list in lists" :key="list.number" class="list-tile" :class="{ active: selectedList === list.number }" @click="chooseList(list.number)"><span>List {{ String(list.number).padStart(2, '0') }}</span><small>{{ list.words.length }}</small><i :style="{ '--progress': `${list.progress}%` }"></i></button></div>
               <div class="control-row"><label for="question-count">本轮题数</label><div class="number-control"><button @click="questionCount = Math.max(1, questionCount - 1)" aria-label="减少题数">−</button><input id="question-count" v-model.number="questionCount" type="number" min="1" :max="activeListWords.length" /><button @click="questionCount = Math.min(activeListWords.length, questionCount + 1)" aria-label="增加题数">+</button></div></div>
-              <p class="limit-note">上限 {{ activeListWords.length }} 题 · 已按当前 List 限制</p>
+              <p class="limit-note">上限 {{ activeListWords.length }} 题 · 已按当前 List 限制</p><p class="list-legend"><i></i> 红色线条 = 该 List 已记入错题的比例</p>
             </section>
             <section class="quote-panel"><div class="quote-mark">“</div><p>先把今天的一小块，变成明天的底气。</p><span>WORDLAB NOTE / 01</span></section>
           </aside>

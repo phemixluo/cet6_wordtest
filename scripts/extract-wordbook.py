@@ -24,7 +24,8 @@ def parse_list(block: str, list_number: int) -> list[dict[str, object]]:
     candidates: list[tuple[int, str, str]] = []
 
     for index, line in enumerate(lines):
-        match = word_line.match(line)
+        normalized_line = re.sub(r"^\s*【拓展】\s*", "", line)
+        match = word_line.match(normalized_line)
         if not match:
             continue
 
@@ -35,7 +36,7 @@ def parse_list(block: str, list_number: int) -> list[dict[str, object]]:
         if "/" not in rest and not next_line.lstrip().startswith("/"):
             continue
         if len(word) < 2 or word.lower() in {
-            "list", "the", "pride", "bullying", "ad", "adv", "n", "v", "vi", "vt"
+            "list", "the", "pride", "bullying", "ad", "adv", "n", "v", "vi", "vt", "http", "https"
         }:
             continue
         candidates.append((index, word.lower(), rest.strip()))
@@ -51,12 +52,30 @@ def parse_list(block: str, list_number: int) -> list[dict[str, object]]:
 
         for line in lines[line_index + 1 : end]:
             clean_line = line.strip()
-            if not clean_line or clean_line.startswith("【") or clean_line.startswith("/"):
+            if not clean_line or clean_line.startswith("【"):
+                continue
+            if clean_line.startswith("/"):
+                pronunciation_tail = re.sub(r"^/[^/]+/\s*", "", clean_line)
+                if has_chinese(pronunciation_tail):
+                    definition_parts.append(pronunciation_tail)
+                    break
                 continue
             if has_chinese(clean_line):
                 definition_parts.append(clean_line)
             if definition_parts:
                 break
+
+        # A page break can place a short definition immediately before the
+        # word. Use it only when the normal forward lookup found nothing.
+        if not definition_parts:
+            previous_start = candidates[item_index - 1][0] + 1 if item_index else 0
+            for line in reversed(lines[previous_start:line_index]):
+                clean_line = line.strip()
+                if not clean_line or clean_line.startswith("【") or clean_line.startswith("/"):
+                    continue
+                if has_chinese(clean_line):
+                    definition_parts.append(clean_line)
+                    break
 
         meaning = re.sub(r"\s+", " ", " ".join(definition_parts)).strip(" ：:，,。.")
         meaning = re.sub(r"^(?:a|ad|adv|n|v|vi|vt|prep|conj|pron|num|aux)\.?\s*", "", meaning)
